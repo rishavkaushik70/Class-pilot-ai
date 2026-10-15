@@ -49,11 +49,13 @@ export async function requireAuthenticatedUser(): Promise<{
  * Directs users without memberships to /onboarding, and users with multiple
  * unselected memberships to /select-institute.
  */
+type MemberWithOrg = Member & { organization: Organization }
+
 export async function requireActiveOrganization(): Promise<ActiveMembershipContext> {
   const { user, session } = await requireAuthenticatedUser()
 
   try {
-    const memberships = await prisma.member.findMany({
+    const memberships: MemberWithOrg[] = await prisma.member.findMany({
       where: { userId: user.id },
       include: { organization: true },
       orderBy: { createdAt: "asc" },
@@ -64,8 +66,10 @@ export async function requireActiveOrganization(): Promise<ActiveMembershipConte
     }
 
     // Determine active membership
-    let active = session.activeOrganizationId
-      ? memberships.find((m) => m.organizationId === session.activeOrganizationId)
+    let active: MemberWithOrg | undefined | null = session.activeOrganizationId
+      ? memberships.find(
+          (m: MemberWithOrg) => m.organizationId === session.activeOrganizationId
+        )
       : null
 
     // If activeOrg is not set or not in memberships, pick first or prompt selection if multiple

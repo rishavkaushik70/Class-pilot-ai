@@ -1,8 +1,11 @@
 import { redirect } from "next/navigation"
 import { requireAuthenticatedUser } from "@/lib/authorization"
 import { prisma } from "@/lib/prisma"
+import type { Member, Organization } from "@prisma/client"
 
 export const instant = false
+
+type MemberWithOrg = Member & { organization: Organization }
 
 /**
  * Post-Authentication Dispatcher:
@@ -14,7 +17,7 @@ export default async function DashboardPage() {
   const { user, session } = await requireAuthenticatedUser()
 
   try {
-    const memberships = await prisma.member.findMany({
+    const memberships: MemberWithOrg[] = await prisma.member.findMany({
       where: { userId: user.id },
       include: { organization: true },
       orderBy: { createdAt: "asc" },
@@ -31,8 +34,9 @@ export default async function DashboardPage() {
     }
 
     const active = session.activeOrganizationId
-      ? memberships.find((m) => m.organizationId === session.activeOrganizationId) ||
-        memberships[0]
+      ? memberships.find(
+          (m: MemberWithOrg) => m.organizationId === session.activeOrganizationId
+        ) || memberships[0]
       : memberships[0]
 
     // Route based on verified server-side role

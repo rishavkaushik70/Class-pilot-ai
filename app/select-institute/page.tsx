@@ -71,7 +71,7 @@ export default async function SelectInstitutePage() {
             </CardHeader>
 
             <CardContent className="space-y-3 pt-3">
-              {memberships.map((m) => {
+              {memberships.map((m: MemberWithOrg) => {
                 const isStudent = m.role === "student"
                 return (
                   <form
